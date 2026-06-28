@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SafeAlert — Protéger · Alerter · Sauver</title>
+<meta name="description" content="SafeAlert — Application gratuite d'alerte d'urgence. Bouton SOS, géolocalisation en temps réel, alertes discrètes pour victimes.">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
+
+  :root {
+    --red: #CC0000;
+    --red-dark: #990000;
+    --bg: #0a0a0a;
+    --card: #141414;
+    --border: rgba(255,255,255,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: #fff;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── ÉCRAN SOS ── */
+  #screen-sos {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 48px 24px 40px;
+    background: radial-gradient(ellipse at top, #1a0000 0%, #0a0a0a 60%);
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    justify-content: center;
+  }
+  .logo-circle {
+    width: 40px; height: 40px;
+    background: var(--red);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 12px; letter-spacing: 1px;
+  }
+  .logo-text { font-size: 20px; font-weight: 700; letter-spacing: 1px; }
+  .logo-text span { color: var(--red); }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.4);
+    margin-top: 8px;
+  }
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #22C55E;
+    animation: blink 2s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* BOUTON SOS */
+  .sos-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .sos-rings {
+    position: relative;
+    width: 240px; height: 240px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid rgba(204,0,0,0.3);
+    animation: ringPulse 2.5s ease-out infinite;
+  }
+  .ring:nth-child(1) { width: 100%; height: 100%; animation-delay: 0s; }
+  .ring:nth-child(2) { width: 80%; height: 80%; animation-delay: 0.5s; }
+  .ring:nth-child(3) { width: 60%; height: 60%; animation-delay: 1s; }
+  @keyframes ringPulse {
+    0% { transform: scale(0.95); opacity: 0.8; }
+    50% { transform: scale(1.05); opacity: 0.3; }
+    100% { transform: scale(0.95); opacity: 0.8; }
+  }
+
+  .sos-btn {
+    position: relative;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: var(--red);
+    border: none;
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    box-shadow: 0 0 60px rgba(204,0,0,0.5), 0 0 120px rgba(204,0,0,0.2);
+    transition: transform 0.1s, box-shadow 0.1s;
+    -webkit-user-select: none;
+  }
+  .sos-btn:active {
+    transform: scale(0.95);
+    box-shadow: 0 0 30px rgba(204,0,0,0.4);
+  }
+  .sos-btn .sos-label {
+    font-size: 42px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: #fff;
+    line-height: 1;
+  }
+  .sos-btn .sos-sub {
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .sos-hint {
+    font-size: 14px;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 1px;
+    text-align: center;
+  }
+
+  /* ACTIONS */
+  .actions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+    max-width: 320px;
+  }
+  .action-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 12px;
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 8px;
+    transition: background 0.2s, border-color 0.2s;
+    color: #fff;
+  }
+  .action-btn:active { background: #1e1e1e; border-color: rgba(204,0,0,0.4); }
+  .action-btn .icon { font-size: 24px; }
+  .action-btn .label { font-size: 12px; font-weight: 600; letter-spacing: 0.5px; }
+  .action-btn .desc { font-size: 10px; color: rgba(255,255,255,0.4); text-align: center; }
+
+  /* NAV */
+  .nav-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(10,10,10,0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding: 12px 0 20px;
+    z-index: 100;
+  }
+  .nav-item {
+    flex: 1;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+    cursor: pointer;
+    padding: 4px;
+    border: none; background: none; color: rgba(255,255,255,0.4);
+    font-family: 'Inter', sans-serif;
+    transition: color 0.2s;
+  }
+  .nav-item.active { color: var(--red); }
+  .nav-item .nav-icon { font-size: 20px; }
+  .nav-item .nav-label { font-size: 10px; font-weight: 600; letter-spacing: 0.5px; }
+
+  /* ── MODAL ALERTE ── */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 200;
+    align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px 24px;
+    width: 100%; max-width: 340px;
+    text-align: center;
+  }
+  .modal h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .modal p { font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 24px; line-height: 1.5; }
+  .modal-btns { display: flex; flex-direction: column; gap: 10px; }
+  .modal-btn {
+    width: 100%; padding: 14px;
+    border-radius: 10px; border: none;
+    font-size: 15px; font-weight: 600;
+    cursor: pointer; font-family: 'Inter', sans-serif;
+    transition: opacity 0.2s;
+  }
+  .modal-btn:active { opacity: 0.8; }
+  .modal-btn.primary { background: var(--red); color: #fff; }
+  .modal-btn.secondary { background: rgba(255,255,255,0.08); color: #fff; }
+  .modal-btn.danger { background: #1a1a1a; color: rgba(255,255,255,0.5); border: 1px solid var(--border); }
+
+  /* ── ÉCRAN DISCRET ── */
+  #screen-discret {
+    display: none;
+    min-height: 100vh;
+    background: #000;
+    align-items: center; justify-content: center;
+    flex-direction: column; gap: 32px;
+    padding: 40px 24px;
+  }
+  .discret-title { font-size: 18px; font-weight: 600; color: rgba(255,255,255,0.2); letter-spacing: 2px; }
+  .discret-btn {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: rgba(204,0,0,0.15);
+    border: 2px solid rgba(204,0,0,0.3);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .discret-btn:active { background: rgba(204,0,0,0.3); }
+  .discret-inner { width: 60px; height: 60px; border-radius: 50%; background: var(--red); }
+  .discret-hint { font-size: 13px; color: rgba(255,255,255,0.15); text-align: center; max-width: 240px; line-height: 1.6; }
+
+  /* ── ÉCRAN CONTACTS ── */
+  #screen-contacts {
+    display: none;
+    min-height: 100vh;
+    background: var(--bg);
+    padding: 60px 24px 100px;
+  }
+  .screen-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .screen-sub { font-size: 14px; color: rgba(255,255,255,0.4); margin-bottom: 28px; }
+  .contact-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 10px;
+  }
+  .contact-avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--red);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px; flex-shrink: 0;
+  }
+  .contact-info { flex: 1; }
+  .contact-name { font-size: 15px; font-weight: 600; }
+  .contact-relation { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+  .contact-toggle {
+    width: 44px; height: 24px;
+    border-radius: 12px;
+    background: #22C55E;
+    border: none; cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .contact-toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    border-radius: 50%; background: #fff;
+    top: 3px; right: 3px;
+    transition: right 0.2s;
+  }
+  .add-contact-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    background: rgba(204,0,0,0.1);
+    border: 1px dashed rgba(204,0,0,0.3);
+    color: var(--red);
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; margin-top: 8px;
+    font-family: 'Inter', sans-serif;
+    transition: background 0.2s;
+  }
+  .add-contact-btn:active { background: rgba(204,0,0,0.2); }
+
+  /* ── ÉCRAN URGENCES ── */
+  #screen-urgences {
+    display: none;
+    min-height: 100vh;
+    background: var(--bg);
+    padding: 60px 24px 100px;
+  }
+  .urgence-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .urgence-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 12px;
+    text-align: center;
+    cursor: pointer;
+    text-decoration: none; color: #fff;
+    display: block;
+    transition: border-color 0.2s;
+  }
+  .urgence-card:active { border-color: var(--red); }
+  .urgence-number { font-size: 40px; font-weight: 900; color: var(--red); line-height: 1; }
+  .urgence-name { font-size: 13px; font-weight: 600; margin-top: 6px; }
+  .urgence-desc { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 3px; }
+  .urgence-icon { font-size: 20px; margin-bottom: 6px; }
+
+  /* ── ALERTE ACTIVE ── */
+  #screen-alerte {
+    display: none;
+    min-height: 100vh;
+    background: #1a0000;
+    align-items: center; justify-content: center;
+    flex-direction: column; gap: 24px;
+    padding: 40px 24px;
+    animation: alertePulse 1s ease-in-out infinite;
+  }
+  @keyframes alertePulse {
+    0%,100% { background: #1a0000; }
+    50% { background: #2a0000; }
+  }
+  .alerte-icon { font-size: 64px; animation: shake 0.5s ease-in-out infinite; }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)}
+  }
+  .alerte-title { font-size: 28px; font-weight: 900; text-align: center; letter-spacing: 1px; }
+  .alerte-sub { font-size: 15px; color: rgba(255,255,255,0.6); text-align: center; line-height: 1.5; }
+  .alerte-counter {
+    font-size: 72px; font-weight: 900; color: var(--red);
+    font-variant-numeric: tabular-nums;
+  }
+  .alerte-cancel {
+    padding: 14px 40px;
+    border-radius: 50px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff; font-size: 15px; font-weight: 600;
+    cursor: pointer; font-family: 'Inter', sans-serif;
+    transition: background 0.2s;
+  }
+  .alerte-cancel:active { background: rgba(255,255,255,0.2); }
+
+  /* Responsive */
+  @media (min-width: 480px) {
+    .sos-rings { width: 280px; height: 280px; }
+    .sos-btn { width: 190px; height: 190px; }
+    .sos-btn .sos-label { font-size: 52px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- ÉCRAN PRINCIPAL SOS                     -->
+<!-- ═══════════════════════════════════════ -->
+<div id="screen-sos">
+
+  <div style="width:100%; display:flex; flex-direction:column; align-items:center; gap:6px;">
+    <div class="header">
+      <div class="logo-circle">SOS</div>
+      <span class="logo-text"><span>Safe</span>Alert</span>
+    </div>
+    <div class="status-bar">
+      <div class="status-dot"></div>
+      <span>GPS actif · Contacts prêts</span>
+    </div>
+  </div>
+
+  <div class="sos-container">
+    <div class="sos-rings">
+      <div class="ring"></div>
+      <div class="ring"></div>
+      <div class="ring"></div>
+      <button class="sos-btn" onclick="lancerAlerte()">
+        <span class="sos-label">SOS</span>
+        <span class="sos-sub">SafeAlert</span>
+      </button>
+    </div>
+    <p class="sos-hint">Appuyez pour déclencher l'alerte</p>
+  </div>
+
+  <div class="actions-grid">
+    <button class="action-btn" onclick="showScreen('discret')">
+      <span class="icon">🤫</span>
+      <span class="label">Mode discret</span>
+      <span class="desc">Alerte silencieuse invisible</span>
+    </button>
+    <button class="action-btn" onclick="showScreen('contacts')">
+      <span class="icon">👥</span>
+      <span class="label">Mes contacts</span>
+      <span class="desc">Proches à alerter</span>
+    </button>
+    <button class="action-btn" onclick="showScreen('urgences')">
+      <span class="icon">🚨</span>
+      <span class="label">Numéros</span>
+      <span class="desc">15 · 17 · 18 · 112</span>
+    </button>
+    <button class="action-btn" onclick="showModal('enregistrer')">
+      <span class="icon">🎙️</span>
+      <span class="label">Enregistrer</span>
+      <span class="desc">Audio ou vidéo preuve</span>
+    </button>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- ÉCRAN MODE DISCRET                      -->
+<!-- ═══════════════════════════════════════ -->
+<div id="screen-discret" style="display:none; flex-direction:column;">
+  <div style="padding:60px 24px 0; display:flex; align-items:center; gap:12px; cursor:pointer;" onclick="showScreen('sos')">
+    <span style="font-size:20px;">←</span>
+    <span style="font-size:16px; color:rgba(255,255,255,0.5);">Mode discret</span>
+  </div>
+  <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 24px; gap:32px;">
+    <p class="discret-title">ALERTE SILENCIEUSE</p>
+    <div class="discret-btn" onclick="lancerAlerteDiscrète()">
+      <div class="discret-inner"></div>
+    </div>
+    <p class="discret-hint">Aucun son. Aucune lumière. Aucune notification visible.<br>Vos contacts reçoivent votre position en silence total.</p>
+    <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px 20px; text-align:center;">
+      <p style="font-size:13px; color:rgba(255,255,255,0.5); line-height:1.6;">Pour activer sans regarder le téléphone :<br><strong style="color:rgba(255,255,255,0.7);">Appuyez 3 fois sur le bouton de volume</strong></p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- ÉCRAN CONTACTS                          -->
+<!-- ═══════════════════════════════════════ -->
+<div id="screen-contacts" style="display:none;">
+  <div style="padding:60px 24px 0; display:flex; align-items:center; gap:12px; cursor:pointer; margin-bottom:20px;" onclick="showScreen('sos')">
+    <span style="font-size:20px;">←</span>
+    <span style="font-size:16px; color:rgba(255,255,255,0.5);">Mes contacts d'urgence</span>
+  </div>
+  <div style="padding:0 24px 100px;">
+    <p class="screen-sub">Ces personnes seront alertées avec votre position en temps réel</p>
+
+    <div class="contact-card">
+      <div class="contact-avatar">M</div>
+      <div class="contact-info">
+        <div class="contact-name">Maman</div>
+        <div class="contact-relation">Famille · 06 XX XX XX XX</div>
+      </div>
+      <button class="contact-toggle"></button>
+    </div>
+
+    <div class="contact-card">
+      <div class="contact-avatar">S</div>
+      <div class="contact-info">
+        <div class="contact-name">Sophie</div>
+        <div class="contact-relation">Amie · 07 XX XX XX XX</div>
+      </div>
+      <button class="contact-toggle"></button>
+    </div>
+
+    <div class="contact-card">
+      <div class="contact-avatar">T</div>
+      <div class="contact-info">
+        <div class="contact-name">Thomas</div>
+        <div class="contact-relation">Conjoint · 06 XX XX XX XX</div>
+      </div>
+      <button class="contact-toggle"></button>
+    </div>
+
+    <button class="add-contact-btn" onclick="showModal('ajout')">+ Ajouter un contact de confiance</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- ÉCRAN NUMÉROS D'URGENCE                 -->
+<!-- ═══════════════════════════════════════ -->
+<div id="screen-urgences" style="display:none;">
+  <div style="padding:60px 24px 0; display:flex; align-items:center; gap:12px; cursor:pointer; margin-bottom:20px;" onclick="showScreen('sos')">
+    <span style="font-size:20px;">←</span>
+    <span style="font-size:16px; color:rgba(255,255,255,0.5);">Numéros d'urgence</span>
+  </div>
+  <div style="padding:0 24px 100px;">
+    <p style="font-size:14px; color:rgba(255,255,255,0.4); margin-bottom:20px;">Appuyez pour appeler directement</p>
+    <div class="urgence-grid">
+      <a class="urgence-card" href="tel:15">
+        <div class="urgence-icon">🚑</div>
+        <div class="urgence-number">15</div>
+        <div class="urgence-name">SAMU</div>
+        <div class="urgence-desc">Urgences médicales</div>
+      </a>
+      <a class="urgence-card" href="tel:17">
+        <div class="urgence-icon">👮</div>
+        <div class="urgence-number">17</div>
+        <div class="urgence-name">Police</div>
+        <div class="urgence-desc">Sécurité publique</div>
+      </a>
+      <a class="urgence-card" href="tel:18">
+        <div class="urgence-icon">🚒</div>
+        <div class="urgence-number">18</div>
+        <div class="urgence-name">Pompiers</div>
+        <div class="urgence-desc">Incendie · Secours</div>
+      </a>
+      <a class="urgence-card" href="tel:112">
+        <div class="urgence-icon">🌍</div>
+        <div class="urgence-number">112</div>
+        <div class="urgence-name">Europe</div>
+        <div class="urgence-desc">Urgences EU</div>
+      </a>
+      <a class="urgence-card" href="tel:3919">
+        <div class="urgence-icon">💜</div>
+        <div class="urgence-number">3919</div>
+        <div class="urgence-name">Violences</div>
+        <div class="urgence-desc">Femmes victimes</div>
+      </a>
+      <a class="urgence-card" href="tel:119">
+        <div class="urgence-icon">👧</div>
+        <div class="urgence-number">119</div>
+        <div class="urgence-name">Enfance</div>
+        <div class="urgence-desc">Danger enfants</div>
+      </a>
+      <a class="urgence-card" href="tel:3114">
+        <div class="urgence-icon">🧠</div>
+        <div class="urgence-number">3114</div>
+        <div class="urgence-name">Prévention</div>
+        <div class="urgence-desc">Crise suicidaire</div>
+      </a>
+      <a class="urgence-card" href="tel:115">
+        <div class="urgence-icon">🏠</div>
+        <div class="urgence-number">115</div>
+        <div class="urgence-name">SAMU Social</div>
+        <div class="urgence-desc">Personnes sans abri</div>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- ÉCRAN ALERTE ACTIVE                     -->
+<!-- ═══════════════════════════════════════ -->
+<div id="screen-alerte" style="display:none; flex-direction:column; align-items:center; justify-content:center; padding:40px 24px; gap:24px;">
+  <div class="alerte-icon">🚨</div>
+  <h2 class="alerte-title">ALERTE EN COURS</h2>
+  <div class="alerte-counter" id="counter">3</div>
+  <p class="alerte-sub">Vos contacts sont alertés.<br>Votre position est transmise en temps réel.</p>
+  <div style="background:rgba(255,255,255,0.05); border-radius:12px; padding:16px 20px; width:100%; max-width:300px;">
+    <p style="font-size:13px; color:rgba(255,255,255,0.4); text-align:center; margin-bottom:8px;">Contacts alertés</p>
+    <p style="font-size:14px; font-weight:600; text-align:center;">✓ Maman · ✓ Sophie · ✓ Thomas</p>
+  </div>
+  <button class="alerte-cancel" onclick="annulerAlerte()">✕ Annuler l'alerte</button>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- MODALES                                 -->
+<!-- ═══════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-alerte">
+  <div class="modal">
+    <div style="font-size:48px; margin-bottom:16px;">🚨</div>
+    <h2>Déclencher l'alerte SOS ?</h2>
+    <p>Vos 3 contacts d'urgence seront alertés immédiatement avec votre position GPS en temps réel.</p>
+    <div class="modal-btns">
+      <button class="modal-btn primary" onclick="confirmerAlerte()">🔴 OUI — Alerter maintenant</button>
+      <button class="modal-btn secondary" onclick="showModal('discret-confirm')">🤫 Mode discret (silencieux)</button>
+      <button class="modal-btn danger" onclick="closeModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-enregistrer">
+  <div class="modal">
+    <div style="font-size:48px; margin-bottom:16px;">🎙️</div>
+    <h2>Enregistrer une preuve</h2>
+    <p>L'enregistrement sera sauvegardé de manière sécurisée et pourra être transmis aux autorités.</p>
+    <div class="modal-btns">
+      <button class="modal-btn primary" onclick="closeModal()">🎙️ Audio uniquement</button>
+      <button class="modal-btn secondary" onclick="closeModal()">📹 Vidéo + Audio</button>
+      <button class="modal-btn danger" onclick="closeModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-ajout">
+  <div class="modal">
+    <div style="font-size:48px; margin-bottom:16px;">👤</div>
+    <h2>Ajouter un contact</h2>
+    <p>Ce contact recevra votre position et une alerte SMS en cas d'urgence.</p>
+    <div class="modal-btns">
+      <button class="modal-btn primary" onclick="closeModal()">📱 Choisir dans mes contacts</button>
+      <button class="modal-btn danger" onclick="closeModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- NAV BAR -->
+<nav class="nav-bar" id="navbar">
+  <button class="nav-item active" onclick="showScreen('sos')">
+    <span class="nav-icon">🆘</span>
+    <span class="nav-label">SOS</span>
+  </button>
+  <button class="nav-item" onclick="showScreen('discret')">
+    <span class="nav-icon">🤫</span>
+    <span class="nav-label">Discret</span>
+  </button>
+  <button class="nav-item" onclick="showScreen('contacts')">
+    <span class="nav-icon">👥</span>
+    <span class="nav-label">Contacts</span>
+  </button>
+  <button class="nav-item" onclick="showScreen('urgences')">
+    <span class="nav-icon">📞</span>
+    <span class="nav-label">Urgences</span>
+  </button>
+</nav>
+
+<script>
+// ── Navigation ──
+const screens = ['sos','discret','contacts','urgences','alerte'];
+
+function showScreen(name) {
+  screens.forEach(s => {
+    const el = document.getElementById('screen-'+s);
+    if(el) el.style.display = 'none';
+  });
+  const target = document.getElementById('screen-'+name);
+  if(target) target.style.display = ['discret','alerte'].includes(name) ? 'flex' : 'block';
+
+  // Nav active
+  document.querySelectorAll('.nav-item').forEach((btn, i) => {
+    btn.classList.remove('active');
+    const labels = ['sos','discret','contacts','urgences'];
+    if(labels[i] === name) btn.classList.add('active');
+  });
+
+  // Cacher nav sur alerte
+  document.getElementById('navbar').style.display = name === 'alerte' ? 'none' : 'flex';
+}
+
+// ── Modales ──
+function showModal(name) {
+  document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show'));
+  const m = document.getElementById('modal-'+name);
+  if(m) m.classList.add('show');
+}
+function closeModal() {
+  document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show'));
+}
+
+// ── Alerte ──
+function lancerAlerte() {
+  showModal('alerte');
+}
+
+let countInterval = null;
+
+function confirmerAlerte() {
+  closeModal();
+  showScreen('alerte');
+  let count = 3;
+  document.getElementById('counter').textContent = count;
+  clearInterval(countInterval);
+  countInterval = setInterval(() => {
+    count++;
+    document.getElementById('counter').textContent = count;
+  }, 1000);
+}
+
+function lancerAlerteDiscrète() {
+  closeModal();
+  showScreen('alerte');
+  let count = 0;
+  document.getElementById('counter').textContent = count;
+  clearInterval(countInterval);
+  countInterval = setInterval(() => {
+    count++;
+    document.getElementById('counter').textContent = count;
+  }, 1000);
+}
+
+function annulerAlerte() {
+  clearInterval(countInterval);
+  showScreen('sos');
+}
+
+// Init
+showScreen('sos');
+</script>
+
+</body>
+</html>
