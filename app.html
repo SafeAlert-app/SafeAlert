@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0A0C10">
+<title>SafeAlert — Application SOS</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+
+  :root {
+    --red: #E8192C;
+    --red-dark: #B5101F;
+    --night: #0A0C10;
+    --card: #181C23;
+    --border: rgba(255,255,255,0.08);
+    --text: #F0F2F5;
+    --muted: #8B92A0;
+    --green: #22C55E;
+    --orange: #F59E0B;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--night);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* SCREENS */
+  .screen { display: none; min-height: 100vh; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  /* ── SCREEN 1: HOME ── */
+  #home {
+    background: radial-gradient(ellipse at center top, #1a0508 0%, #0A0C10 60%);
+    align-items: center;
+    padding: 40px 24px 32px;
+    position: relative;
+  }
+
+  .app-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+  }
+
+  .logo-mark {
+    background: var(--red);
+    border-radius: 12px;
+    padding: 8px 12px;
+    font-weight: 900;
+    font-size: 14px;
+    letter-spacing: 1px;
+  }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(34,197,94,0.12);
+    border: 1px solid rgba(34,197,94,0.3);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--green);
+    font-weight: 500;
+  }
+
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse-green 2s infinite;
+  }
+
+  @keyframes pulse-green {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .sos-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin: 24px 0 40px;
+  }
+
+  .sos-rings {
+    position: relative;
+    width: 240px;
+    height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(232,25,44,0.2);
+    animation: expand 3s infinite;
+  }
+  .ring:nth-child(1) { width: 240px; height: 240px; animation-delay: 0s; }
+  .ring:nth-child(2) { width: 190px; height: 190px; animation-delay: 0.8s; }
+  .ring:nth-child(3) { width: 140px; height: 140px; animation-delay: 1.6s; }
+
+  @keyframes expand {
+    0% { opacity: 0.6; transform: scale(0.95); }
+    100% { opacity: 0; transform: scale(1.1); }
+  }
+
+  .sos-btn {
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #FF3347, #B5101F);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 60px rgba(232,25,44,0.5), 0 0 120px rgba(232,25,44,0.2);
+    transition: transform 0.1s, box-shadow 0.1s;
+    position: relative;
+    z-index: 2;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .sos-btn:active {
+    transform: scale(0.94);
+    box-shadow: 0 0 30px rgba(232,25,44,0.4);
+  }
+
+  .sos-btn span:first-child {
+    font-size: 36px;
+    font-weight: 900;
+    color: white;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+
+  .sos-btn span:last-child {
+    font-size: 10px;
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 3px;
+    margin-top: 4px;
+  }
+
+  .sos-label {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  /* QUICK ACTIONS */
+  .quick-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 24px;
+  }
+
+  .action-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .action-card:active { background: #222730; }
+
+  .action-icon {
+    font-size: 24px;
+  }
+
+  .action-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .action-sub {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* EMERGENCY NUMBERS */
+  .emergency-bar {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+  }
+
+  .emergency-bar h3 {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .numbers-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .num-btn {
+    background: rgba(232,25,44,0.1);
+    border: 1px solid rgba(232,25,44,0.2);
+    border-radius: 10px;
+    padding: 10px 8px;
+    text-align: center;
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+    transition: background 0.2s;
+  }
+
+  .num-btn:active { background: rgba(232,25,44,0.2); }
+
+  .num-btn .num { font-size: 18px; font-weight: 700; color: var(--red); }
+  .num-btn .label { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* ── SCREEN 2: ALERT ACTIVE ── */
+  #alert-active {
+    background: #0D0305;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    text-align: center;
+    position: relative;
+  }
+
+  .alert-pulse {
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #E8192C, #7A0010);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 32px;
+    box-shadow: 0 0 0 0 rgba(232,25,44,0.7);
+    animation: pulse-alert 1.5s infinite;
+  }
+
+  @keyframes pulse-alert {
+    0% { box-shadow: 0 0 0 0 rgba(232,25,44,0.7); }
+    70% { box-shadow: 0 0 0 40px rgba(232,25,44,0); }
+    100% { box-shadow: 0 0 0 0 rgba(232,25,44,0); }
+  }
+
+  .alert-icon { font-size: 64px; }
+
+  .alert-title {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--red);
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+
+  .alert-subtitle {
+    font-size: 15px;
+    color: var(--muted);
+    margin-bottom: 32px;
+    line-height: 1.5;
+  }
+
+  .alert-info-cards {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .info-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+  }
+
+  .info-card-icon { font-size: 20px; }
+  .info-card-text { font-size: 13px; color: var(--muted); }
+  .info-card-value { font-size: 14px; font-weight: 600; color: var(--text); }
+
+  .cancel-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 50px;
+    padding: 14px 40px;
+    color: var(--muted);
+    font-size: 15px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .cancel-btn:active { background: rgba(255,255,255,0.05); }
+
+  /* ── SCREEN 3: CONTACTS ── */
+  #contacts {
+    padding: 48px 24px 32px;
+  }
+
+  .screen-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 24px;
+  }
+
+  .contact-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .contact-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .contact-avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: rgba(232,25,44,0.15);
+    border: 1px solid rgba(232,25,44,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .contact-info { flex: 1; }
+  .contact-name { font-size: 15px; font-weight: 600; }
+  .contact-role { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .contact-call {
+    background: var(--red);
+    border: none;
+    border-radius: 50%;
+    width: 38px; height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    text-decoration: none;
+  }
+
+  .add-contact-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px dashed rgba(255,255,255,0.2);
+    border-radius: 14px;
+    padding: 16px;
+    color: var(--muted);
+    font-size: 14px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  /* ── SCREEN 4: PROFILE ── */
+  #profile {
+    padding: 48px 24px 32px;
+  }
+
+  .profile-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .profile-avatar {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: rgba(232,25,44,0.15);
+    border: 2px solid var(--red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+  }
+
+  .profile-name { font-size: 20px; font-weight: 700; }
+  .profile-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  .settings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .setting-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+  }
+
+  .setting-icon { font-size: 20px; width: 28px; text-align: center; }
+  .setting-label { flex: 1; font-size: 14px; font-weight: 500; }
+  .setting-arrow { color: var(--muted); font-size: 12px; }
+
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--green);
+    border-radius: 12px;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 20px; height: 20px;
+    background: white;
+    border-radius: 50%;
+    top: 2px; right: 2px;
+    transition: right 0.2s;
+  }
+
+  .toggle.off { background: rgba(255,255,255,0.15); }
+  .toggle.off::after { right: 22px; }
+
+  /* NAV BAR */
+  .nav-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(24,28,35,0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding: 12px 0 20px;
+    z-index: 50;
+  }
+
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 4px 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .nav-icon { font-size: 22px; }
+  .nav-label { font-size: 10px; color: var(--muted); font-weight: 500; }
+  .nav-item.active .nav-label { color: var(--red); }
+
+  /* COUNTDOWN */
+  .countdown {
+    font-size: 64px;
+    font-weight: 900;
+    color: var(--red);
+    line-height: 1;
+    margin-bottom: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .countdown-label {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    top: 24px; left: 50%;
+    transform: translateX(-50%) translateY(-80px);
+    background: var(--green);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 100;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* PADDING FOR NAV */
+  .screen { padding-bottom: 80px; }
+  #alert-active { padding-bottom: 40px; }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast">✅ Alerte envoyée !</div>
+
+<!-- SCREEN 1: HOME -->
+<div class="screen active" id="home">
+  <div class="app-header">
+    <div class="logo-mark">SOS</div>
+    <div class="status-badge">
+      <div class="status-dot"></div>
+      Actif
+    </div>
+  </div>
+
+  <div class="sos-container">
+    <div class="sos-rings">
+      <div class="ring"></div>
+      <div class="ring"></div>
+      <div class="ring"></div>
+      <button class="sos-btn" id="sosBtn" onclick="triggerSOS()">
+        <span>SOS</span>
+        <span>SAFEALERT</span>
+      </button>
+    </div>
+    <p class="sos-label">Appuyez 3 secondes pour déclencher l'alerte<br>et envoyer votre position aux secours</p>
+  </div>
+
+  <div class="quick-actions">
+    <div class="action-card" onclick="showScreen('contacts')">
+      <div class="action-icon">👥</div>
+      <div class="action-title">Contacts SOS</div>
+      <div class="action-sub">3 contacts configurés</div>
+    </div>
+    <div class="action-card">
+      <div class="action-icon">📍</div>
+      <div class="action-title">Ma position</div>
+      <div class="action-sub">Géolocalisation active</div>
+    </div>
+    <div class="action-card">
+      <div class="action-icon">🎙️</div>
+      <div class="action-title">Enregistrer</div>
+      <div class="action-sub">Audio discret</div>
+    </div>
+    <div class="action-card">
+      <div class="action-icon">📋</div>
+      <div class="action-title">Signaler</div>
+      <div class="action-sub">Incident ou danger</div>
+    </div>
+  </div>
+
+  <div class="emergency-bar">
+    <h3>Numéros d'urgence</h3>
+    <div class="numbers-grid">
+      <a href="tel:15" class="num-btn">
+        <div class="num">15</div>
+        <div class="label">SAMU</div>
+      </a>
+      <a href="tel:17" class="num-btn">
+        <div class="num">17</div>
+        <div class="label">Police</div>
+      </a>
+      <a href="tel:18" class="num-btn">
+        <div class="num">18</div>
+        <div class="label">Pompiers</div>
+      </a>
+      <a href="tel:112" class="num-btn">
+        <div class="num">112</div>
+        <div class="label">Europe</div>
+      </a>
+      <a href="tel:3114" class="num-btn">
+        <div class="num">3114</div>
+        <div class="label">Crise</div>
+      </a>
+      <a href="tel:119" class="num-btn">
+        <div class="num">119</div>
+        <div class="label">Enfants</div>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 2: ALERT ACTIVE -->
+<div class="screen" id="alert-active">
+  <div class="alert-pulse">
+    <div class="alert-icon">🚨</div>
+  </div>
+
+  <div class="countdown" id="countdown">3</div>
+  <div class="countdown-label">secondes avant envoi de l'alerte</div>
+
+  <div class="alert-title">ALERTE EN COURS</div>
+  <div class="alert-subtitle">Votre position est transmise<br>aux secours et à vos contacts</div>
+
+  <div class="alert-info-cards">
+    <div class="info-card">
+      <div class="info-card-icon">📍</div>
+      <div>
+        <div class="info-card-text">Position GPS</div>
+        <div class="info-card-value">Localisation en cours...</div>
+      </div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-icon">👥</div>
+      <div>
+        <div class="info-card-text">Contacts alertés</div>
+        <div class="info-card-value">3 contacts notifiés</div>
+      </div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-icon">🕐</div>
+      <div>
+        <div class="info-card-text">Heure de l'alerte</div>
+        <div class="info-card-value" id="alertTime">—</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="cancel-btn" onclick="cancelAlert()">Annuler l'alerte</button>
+</div>
+
+<!-- SCREEN 3: CONTACTS -->
+<div class="screen" id="contacts">
+  <div class="screen-title">Contacts SOS 👥</div>
+
+  <div class="contact-list">
+    <div class="contact-item">
+      <div class="contact-avatar">👩</div>
+      <div class="contact-info">
+        <div class="contact-name">Marie (Maman)</div>
+        <div class="contact-role">Contact prioritaire</div>
+      </div>
+      <a href="tel:+33600000001" class="contact-call">📞</a>
+    </div>
+    <div class="contact-item">
+      <div class="contact-avatar">👨</div>
+      <div class="contact-info">
+        <div class="contact-name">Pierre (Ami)</div>
+        <div class="contact-role">Contact secondaire</div>
+      </div>
+      <a href="tel:+33600000002" class="contact-call">📞</a>
+    </div>
+    <div class="contact-item">
+      <div class="contact-avatar">👮</div>
+      <div class="contact-info">
+        <div class="contact-name">Police locale</div>
+        <div class="contact-role">Urgence officielle</div>
+      </div>
+      <a href="tel:17" class="contact-call">📞</a>
+    </div>
+  </div>
+
+  <button class="add-contact-btn">＋ Ajouter un contact SOS</button>
+</div>
+
+<!-- SCREEN 4: PROFILE -->
+<div class="screen" id="profile">
+  <div class="profile-header">
+    <div class="profile-avatar">🧑</div>
+    <div>
+      <div class="profile-name">Mon Profil</div>
+      <div class="profile-sub">SafeAlert · Protégé</div>
+    </div>
+  </div>
+
+  <div class="settings-list">
+    <div class="setting-item">
+      <div class="setting-icon">📍</div>
+      <div class="setting-label">Géolocalisation</div>
+      <div class="toggle"></div>
+    </div>
+    <div class="setting-item">
+      <div class="setting-icon">🔔</div>
+      <div class="setting-label">Notifications</div>
+      <div class="toggle"></div>
+    </div>
+    <div class="setting-item">
+      <div class="setting-icon">🎙️</div>
+      <div class="setting-label">Enregistrement auto</div>
+      <div class="toggle off"></div>
+    </div>
+    <div class="setting-item">
+      <div class="setting-icon">🌍</div>
+      <div class="setting-label">Langue</div>
+      <div class="setting-label" style="text-align:right;color:var(--muted)">Français</div>
+      <div class="setting-arrow">›</div>
+    </div>
+    <div class="setting-item">
+      <div class="setting-icon">🆘</div>
+      <div class="setting-label">Fiche d'urgence médicale</div>
+      <div class="setting-arrow">›</div>
+    </div>
+    <div class="setting-item">
+      <div class="setting-icon">ℹ️</div>
+      <div class="setting-label">À propos de SafeAlert</div>
+      <div class="setting-arrow">›</div>
+    </div>
+  </div>
+</div>
+
+<!-- NAV BAR -->
+<nav class="nav-bar">
+  <div class="nav-item active" id="nav-home" onclick="showScreen('home'); setNav('nav-home')">
+    <div class="nav-icon">🏠</div>
+    <div class="nav-label">Accueil</div>
+  </div>
+  <div class="nav-item" id="nav-contacts" onclick="showScreen('contacts'); setNav('nav-contacts')">
+    <div class="nav-icon">👥</div>
+    <div class="nav-label">Contacts</div>
+  </div>
+  <div class="nav-item" id="nav-profile" onclick="showScreen('profile'); setNav('nav-profile')">
+    <div class="nav-icon">⚙️</div>
+    <div class="nav-label">Profil</div>
+  </div>
+</nav>
+
+<script>
+  let sosTimer = null;
+  let countdownTimer = null;
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function setNav(activeId) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const el = document.getElementById(activeId);
+    if (el) el.classList.add('active');
+  }
+
+  function triggerSOS() {
+    // Get location if available
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        document.querySelector('.info-card .info-card-value').textContent =
+          `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
+      });
+    }
+
+    document.getElementById('alertTime').textContent = new Date().toLocaleTimeString('fr-FR');
+    showScreen('alert-active');
+
+    let count = 3;
+    document.getElementById('countdown').textContent = count;
+
+    countdownTimer = setInterval(() => {
+      count--;
+      document.getElementById('countdown').textContent = count;
+      if (count <= 0) {
+        clearInterval(countdownTimer);
+        document.getElementById('countdown').textContent = '✓';
+        showToast('✅ Alerte envoyée aux secours !');
+      }
+    }, 1000);
+  }
+
+  function cancelAlert() {
+    if (countdownTimer) clearInterval(countdownTimer);
+    showScreen('home');
+    setNav('nav-home');
+    showToast('❌ Alerte annulée');
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+
+  // Toggle switches
+  document.querySelectorAll('.toggle').forEach(t => {
+    t.addEventListener('click', () => t.classList.toggle('off'));
+  });
+</script>
+</body>
+</html>
